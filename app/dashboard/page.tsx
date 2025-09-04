@@ -106,12 +106,12 @@ const DashboardPage: React.FC = () => {
                   <tr key={food.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
                     <td className="py-4 px-4 text-gray-800">{food.date}</td>
                     <td className="py-4 px-4 hidden md:table-cell">
-                      <img 
-                        src={food.image} 
-                        alt={food.name} 
-                        width={60} 
-                        height={60} 
-                        className="rounded-lg object-cover" 
+                      <img
+                        src={food.image}
+                        alt={food.name}
+                        width={60}
+                        height={60}
+                        className="rounded-lg object-cover"
                       />
                     </td>
                     <td className="py-4 px-4 text-gray-800 font-medium">{food.name}</td>
