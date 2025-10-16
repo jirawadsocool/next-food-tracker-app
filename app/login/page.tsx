@@ -3,25 +3,47 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+// 1. นำเข้า Supabase Client ที่เราตั้งค่าไว้
+import { supabase } from '@/lib/supabase';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+  const [loading, setLoading] = useState<boolean>(false); 
 
   const router = useRouter();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    router.push('/dashboard')
-    
-    // Logic for handling form submission goes here
-    console.log({ email, password });
-    setMessage({ text: 'Login successful!', type: 'success' });
-    // Simulate API call or form submission
-    setTimeout(() => {
-        setMessage(null);
-    }, 3000);
+    setMessage(null);
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setMessage({ text: error.message, type: 'error' });
+      } else if (data.session) {
+        setMessage({ text: 'Login successful! Redirecting...', type: 'success' });
+        
+        // สำคัญ: ต้องเรียก router.refresh() ก่อน push เพื่ออัปเดต Session
+        router.refresh(); 
+        router.push('/dashboard');
+      } else {
+        // กรณีที่ไม่เกิด error แต่ไม่ได้รับ session
+        setMessage({ text: 'Login failed. Please check your credentials.', type: 'error' });
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setMessage({ text: 'An unexpected network error occurred.', type: 'error' });
+    } finally {
+      // 5. หยุดสถานะ Loading ไม่ว่าจะเกิดอะไรขึ้น
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,6 +68,7 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+              disabled={loading} // ปิดการใช้งานระหว่างรอ
             />
           </div>
 
@@ -58,15 +81,17 @@ const LoginPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+              disabled={loading} // ปิดการใช้งานระหว่างรอ
             />
           </div>
 
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-105 hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50"
+            disabled={loading} // ปิดการใช้งานเมื่อกำลังโหลด
+            className="w-full bg-purple-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-105 hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-500 focus:ring-opacity-50 disabled:bg-purple-400 disabled:cursor-not-allowed"
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
