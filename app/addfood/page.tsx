@@ -1,46 +1,7 @@
 'use client'
 
 import { useState, ChangeEvent, FormEvent } from 'react';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/auth-helpers-nextjs';
-
-// **เพิ่ม Comment พิเศษเพื่อระบุว่านี่คือ Server-Only Module**
-// Next.js จะเข้าใจว่าโค้ดนี้รันเฉพาะฝั่งเซิร์ฟเวอร์เท่านั้น
-// และทำให้การใช้ cookies() ไม่มี Error ใน Editor
-// @ts-ignore
-// ฟังก์ชันนี้จะสร้าง Supabase Client ใหม่ทุกครั้งที่มีการเรียกใช้ (เมื่อ Request เข้ามา)
-export const createClient = () => {
-  const cookieStore = cookies();
-  
-  // 1. ดึง Environment Variables
-  // เพิ่ม ! เพื่อยืนยันกับ TypeScript ว่าค่านี้มีอยู่จริง (เพราะเราเช็คไปแล้ว)
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Missing Supabase environment variables in server utility. Check .env.local.');
-  }
-
-  // 2. สร้าง Client สำหรับ Server Component
-  return createServerClient<any>(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      cookies: {
-        // กำหนดวิธีการอ่าน Cookie
-        get: (name: string) => cookieStore.get(name)?.value,
-        // กำหนดวิธีการตั้งค่า Cookie
-        set: (name: string, value: string, options: any) => {
-          cookieStore.set({ name, value, ...options });
-        },
-        // กำหนดวิธีการลบ Cookie
-        remove: (name: string, options: any) => {
-          cookieStore.set({ name, value: '', ...options });
-        },
-      },
-    }
-  );
-};
+import { addFood } from './action';
 
 const AddFoodPage: React.FC = () => {
   const [foodName, setFoodName] = useState<string>('');
@@ -49,6 +10,7 @@ const AddFoodPage: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,31 +27,46 @@ const AddFoodPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!foodName || !date) {
       setMessage({ text: 'Please fill in all required fields.', type: 'error' });
       return;
     }
-    // Logic to save the food data (e.g., to a database)
-    console.log({
-      foodName,
-      meal,
-      date,
-      imageFile
-    });
-    setMessage({ text: 'Food saved successfully!', type: 'success' });
-    // Clear form after submission
-    setFoodName('');
-    setMeal('Breakfast');
-    setDate('');
-    setImageFile(null);
-    setImagePreviewUrl(null);
+    setIsSubmitting(true);
+    setMessage(null);
 
-    // Hide message after a few seconds
-    setTimeout(() => {
-        setMessage(null);
-    }, 3000);
+    const formData = new FormData(e.currentTarget);
+
+    try {
+      const result = await addFood(formData);
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+      
+      setMessage({ text: 'Food saved successfully!', type: 'success' });
+      // Clear form after submission
+      setFoodName('');
+      setMeal('Breakfast');
+      setDate('');
+      setImageFile(null);
+      setImagePreviewUrl(null);
+      // Reset the file input
+      if (e.currentTarget.foodImage) {
+        e.currentTarget.foodImage.value = '';
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+      setMessage({ text: `Error: ${errorMessage}`, type: 'error' });
+      console.error(error);
+    } finally {
+      setIsSubmitting(false);
+      // Hide message after a few seconds
+      setTimeout(() => {
+          setMessage(null);
+      }, 5000);
+    }
   };
 
   return (
@@ -117,6 +94,7 @@ const AddFoodPage: React.FC = () => {
             <input
               type="text"
               id="foodName"
+              name="name"
               value={foodName}
               onChange={(e) => setFoodName(e.target.value)}
               required
@@ -129,6 +107,7 @@ const AddFoodPage: React.FC = () => {
             <label htmlFor="meal" className="block text-gray-700 font-semibold mb-2">Meal</label>
             <select
               id="meal"
+              name="meal"
               value={meal}
               onChange={(e) => setMeal(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
@@ -146,6 +125,7 @@ const AddFoodPage: React.FC = () => {
             <input
               type="date"
               id="date"
+              name="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               required
@@ -159,6 +139,7 @@ const AddFoodPage: React.FC = () => {
             <input
               type="file"
               id="foodImage"
+              name="image"
               accept="image/*"
               onChange={handleImageChange}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-blue-700 hover:file:bg-violet-100 cursor-pointer"
@@ -173,9 +154,10 @@ const AddFoodPage: React.FC = () => {
           {/* Save Button */}
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-105 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50"
+            disabled={isSubmitting}
+            className="w-full bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transform transition-transform duration-300 hover:scale-105 hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 disabled:bg-gray-400 disabled:scale-100"
           >
-            Save Food
+            {isSubmitting ? 'Saving...' : 'Save Food'}
           </button>
         </form>
       </div>
