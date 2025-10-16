@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import { supabase } from "@/lib/supabase";
 
-// This is a mock food data for demonstration purposes.
-// In a real application, you would get the food item ID from the URL
-// and fetch its data from your database.
 const MOCK_FOOD_DATA = {
   id: 1,
   foodName: 'Spaghetti Bolognese',

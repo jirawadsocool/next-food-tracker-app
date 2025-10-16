@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, ChangeEvent, FormEvent } from 'react';
+import { supabase } from "@/lib/supabase";
 import { addFood } from './action';
 
 const AddFoodPage: React.FC = () => {

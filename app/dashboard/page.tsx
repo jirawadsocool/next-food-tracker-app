@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useMemo, ChangeEvent } from 'react';
+import { supabase } from "@/lib/supabase";
 
 // Mock Data for demonstration
 const MOCK_FOOD_DATA = [
   { id: 1, date: 'Ex.2024-05-20', image: 'https://placehold.co/100x100/A0E7E5/2563EB?text=Pizza', name: 'Ex.Pizza', meal: 'Ex.Dinner' },
-  { id: 2, date: '2024-05-20', image: 'https://placehold.co/100x100/A9CCE3/2563EB?text=Salad', name: 'Salad', meal: 'Lunch' },
-  { id: 3, date: '2024-05-19', image: 'https://placehold.co/100x100/C39BD3/2563EB?text=Pasta', name: 'Pasta', meal: 'Dinner' },
 ];
 
 const ITEMS_PER_PAGE = 5;

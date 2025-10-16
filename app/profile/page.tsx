@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
+import { supabase } from "@/lib/supabase";
 
-// This is a mock user data for demonstration purposes.
-// In a real application, you would fetch this from your database.
 const MOCK_USER_DATA = {
   fullName: 'John Doe',
   email: 'john.doe@example.com',

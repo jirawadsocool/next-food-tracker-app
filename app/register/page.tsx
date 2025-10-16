@@ -4,10 +4,9 @@ import { useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-// นำเข้า Supabase Client ที่เราตั้งค่าไว้
 import { supabase } from '@/lib/supabase';
-// เราจำเป็นต้องใช้ 'crypto' เพื่อสร้างชื่อไฟล์ที่ไม่ซ้ำกัน
-import * as crypto from 'crypto'; 
+import * as crypto from 'crypto';
+
 
 const RegisterPage: React.FC = () => {
   // 1. กำหนด State สำหรับข้อมูลฟอร์มและสถานะ
