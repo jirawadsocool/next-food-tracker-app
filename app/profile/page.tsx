@@ -4,10 +4,10 @@ import { useState, ChangeEvent, FormEvent, useEffect } from 'react';
 import { supabase } from "@/lib/supabase";
 
 const MOCK_USER_DATA = {
-  fullName: 'John Doe',
-  email: 'john.doe@example.com',
-  gender: 'Male',
-  profileImageUrl: 'https://placehold.co/150x150/E5E7EB/2563EB?text=Profile',
+  fullName: '',
+  email: '',
+  gender: '',
+  profileImageUrl: '',
 };
 
 const ProfilePage: React.FC = () => {
